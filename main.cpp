@@ -17,20 +17,83 @@ void defaultPuzzle() {
     }
 }
 
+// user can choose a default board (test cases) between depths of 0, 2, 4, 8, 12, 16, 20, & 24
 void testPuzzle() {
-    vector<int> depth = {1, 2, 3, 4, 5, 6, 0, 7, 8};
-    // //puzzle = depth2;
-    // printPuzzle(depth);
+    int choice = 0;
+    bool input = false;
+
+    cout << endl << "Choose the depth of your default puzzle:" << endl
+         << "1 - Depth 0" << endl
+         << "2 - Depth 2" << endl
+         << "3 - Depth 4" << endl
+         << "4 - Depth 8" << endl
+         << "5 - Depth 12" << endl
+         << "6 - Depth 16" << endl
+         << "7 - Depth 20"<< endl
+         << "8 - Depth 24" << endl;
+
+    while(!input) {
+        cout << endl << "Enter your puzzle choice: ";
+        cin >> choice;
+        if (!(choice > 0 && choice < 9)) {
+            cout << endl << "Error: Invalid Input. Please choose an option between 1-8." << endl;
+        }
+        else {
+            input = true;
+        }
+    }
+
+    if (choice == 1) {
+        cout << choice << endl;
+        // vector<int> depth0{1, 2, 3, 4, 5, 6, 7, 8, 0};
+        // puzzle = depth0;
+    }
+    else if (choice == 2) {
+        cout << choice << endl;
+        // vector<int> depth2{1, 2, 3, 4, 5, 6, 0, 7, 8};
+        // puzzle = depth2;
+    }
+    else if (choice == 3) {
+        cout << choice << endl;
+        // vector<int> depth4{1, 2, 3, 5, 0, 6, 4, 7, 8};
+        // puzzle = depth4;
+    }
+    else if (choice == 4) {
+        cout << choice << endl;
+        // vector<int> depth8{1, 3, 6, 5, 0, 2, 4, 7, 8};
+        // puzzle = depth8;
+    }
+    else if (choice == 5) {
+        cout << choice << endl;
+        // vector<int> depth12{1, 3, 6, 5, 0, 7, 4, 8, 2};
+        // puzzle = depth12;
+    }
+    else if (choice == 6) {
+        cout << choice << endl;
+        // vector<int> depth16{1, 6, 7, 5, 0, 3, 4, 8, 2};
+        // puzzle = depth16;
+    }
+    else if (choice == 7) {
+        cout << choice << endl;
+        // vector<int> depth20{7, 1, 2, 4, 8, 5, 6, 3, 0};
+        // puzzle = depth20;
+    }
+    else if (choice == 8) {
+        cout << choice << endl;
+        // vector<int> depth24{0, 7, 2, 4, 6, 1, 3, 5, 8};
+        // puzzle = depth24;
+    }
+    cout << endl;
+    printPuzzle(puzzle);
 }
 
 // user can create their own 8-Puzzle
 void createPuzzle() {
     int input;
-    int count = 0;
     bool done = false;
     bool choiceCheck;
 
-    cout << "Puzzle Board:" << endl
+    cout << endl << "Puzzle Board:" << endl
          << "a  b  c" << endl
          << "d  e  f" << endl
          << "g  h  i" << endl;
@@ -40,7 +103,7 @@ void createPuzzle() {
     for (int i = 0; i <= 8; i++) {
         done = false;
         while (!done) {
-            cout << "Enter space " << spaces[count] << ": ";
+            cout << "Enter space " << spaces[i] << ": ";
             cin >> input;
 
             if (input < 0 || input > 8) {
@@ -53,11 +116,7 @@ void createPuzzle() {
                 }
                 else {
                     puzzle.at(i) = input;
-                    count++;
                     done = true;
-                    if (count == 9) {
-                        break;
-                    }
                 }
             }
         }
@@ -115,11 +174,10 @@ int main() {
 
         if (puzzleChoice == 1) {
             puzzleOption = true;
-            printPuzzle(puzzle);
+            testPuzzle();
         }
         else if (puzzleChoice == 2) {
             puzzleOption = true;
-            defaultPuzzle();
             createPuzzle();
         }
         else {
@@ -146,7 +204,7 @@ int main() {
             algOption = true;
         }
         else {
-            cout << "Invalid algorithm option." << endl;
+            cout << endl << "Invalid algorithm option." << endl << endl;
             algOption = false;
         }
     }
