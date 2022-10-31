@@ -10,6 +10,8 @@ char spaces[9] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'};
 bool puzzDuplicate(int input);
 void printPuzzle(vector<int> puzzle);
 
+/* ----------------------------------------------------------------------------------------- */
+
 // populates the board with -1
 void defaultPuzzle() {
     for (int i = 0; i <= 8; i++) {
@@ -44,44 +46,36 @@ void testPuzzle() {
     }
 
     if (choice == 1) {
-        cout << choice << endl;
-        // vector<int> depth0{1, 2, 3, 4, 5, 6, 7, 8, 0};
-        // puzzle = depth0;
+        vector<int> depth0{1, 2, 3, 4, 5, 6, 7, 8, 0};
+        puzzle = depth0;
     }
     else if (choice == 2) {
-        cout << choice << endl;
-        // vector<int> depth2{1, 2, 3, 4, 5, 6, 0, 7, 8};
-        // puzzle = depth2;
+        vector<int> depth2{1, 2, 3, 4, 5, 6, 0, 7, 8};
+        puzzle = depth2;
     }
     else if (choice == 3) {
-        cout << choice << endl;
-        // vector<int> depth4{1, 2, 3, 5, 0, 6, 4, 7, 8};
-        // puzzle = depth4;
+        vector<int> depth4{1, 2, 3, 5, 0, 6, 4, 7, 8};
+        puzzle = depth4;
     }
     else if (choice == 4) {
-        cout << choice << endl;
-        // vector<int> depth8{1, 3, 6, 5, 0, 2, 4, 7, 8};
-        // puzzle = depth8;
+        vector<int> depth8{1, 3, 6, 5, 0, 2, 4, 7, 8};
+        puzzle = depth8;
     }
     else if (choice == 5) {
-        cout << choice << endl;
-        // vector<int> depth12{1, 3, 6, 5, 0, 7, 4, 8, 2};
-        // puzzle = depth12;
+        vector<int> depth12{1, 3, 6, 5, 0, 7, 4, 8, 2};
+        puzzle = depth12;
     }
     else if (choice == 6) {
-        cout << choice << endl;
-        // vector<int> depth16{1, 6, 7, 5, 0, 3, 4, 8, 2};
-        // puzzle = depth16;
+        vector<int> depth16{1, 6, 7, 5, 0, 3, 4, 8, 2};
+        puzzle = depth16;
     }
     else if (choice == 7) {
-        cout << choice << endl;
-        // vector<int> depth20{7, 1, 2, 4, 8, 5, 6, 3, 0};
-        // puzzle = depth20;
+        vector<int> depth20{7, 1, 2, 4, 8, 5, 6, 3, 0};
+        puzzle = depth20;
     }
     else if (choice == 8) {
-        cout << choice << endl;
-        // vector<int> depth24{0, 7, 2, 4, 6, 1, 3, 5, 8};
-        // puzzle = depth24;
+        vector<int> depth24{0, 7, 2, 4, 6, 1, 3, 5, 8};
+        puzzle = depth24;
     }
     cout << endl;
     printPuzzle(puzzle);
@@ -157,6 +151,14 @@ void printPuzzle(vector<int>) {
     cout << endl << endl;
 }
 
+/* ----------------------------------------------------------------------------------------- */
+
+void solvePuzzle(vector<int>, int) {
+
+}
+
+/* ----------------------------------------------------------------------------------------- */
+
 int main() {
     int puzzleChoice = 0;
     int algChoice = 0;
@@ -181,7 +183,7 @@ int main() {
             createPuzzle();
         }
         else {
-            cout << "Invalid puzzle option." << endl;
+            cout << "Error: Invalid puzzle option." << endl;
             puzzleOption = false;
         }
     }
@@ -194,18 +196,13 @@ int main() {
              << "3 - A* with the Euclidean Distance heuristic" << endl;
         cin >> algChoice;
 
-        if (algChoice == 1) {
-            algOption = true;
-        }
-        else if (algChoice == 2) {
-            algOption = true;
-        }
-        else if (algChoice == 3) {
-            algOption = true;
-        }
-        else {
-            cout << endl << "Invalid algorithm option." << endl << endl;
+        if (!(algChoice == 1 || algChoice == 2 || algChoice == 3)) {
+            cout << endl << "Error: Invalid algorithm option." << endl << endl;
             algOption = false;
+        }
+        else {             
+            algOption = true;
+            solvePuzzle(puzzle, algChoice);
         }
     }
 
