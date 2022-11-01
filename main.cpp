@@ -1,11 +1,16 @@
 #include <iostream>
+#include <algorithm>
+#include <cstdlib>
 #include <vector>
+#include <queue>
 
 using namespace std;
 
 // variable & function declarations
 vector<int> puzzle(9);
 char spaces[9] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'};
+
+vector<int> goal{1, 2, 3, 4, 5, 6, 7, 8, 0};
 
 bool puzzDuplicate(int input);
 void printPuzzle(vector<int> puzzle);
@@ -77,7 +82,7 @@ void testPuzzle() {
         vector<int> depth24{0, 7, 2, 4, 6, 1, 3, 5, 8};
         puzzle = depth24;
     }
-    cout << endl;
+    cout << endl << "Your 8-Puzzle is:" << endl;
     printPuzzle(puzzle);
 }
 
@@ -96,16 +101,13 @@ void createPuzzle() {
 
     for (int i = 0; i <= 8; i++) {
         done = false;
-        while (!done) {
+        while (done == false) {
             cout << "Enter space " << spaces[i] << ": ";
             cin >> input;
 
-            if (input < 0 || input > 8) {
-                cout << endl << "Error: Invalid Input." << endl << endl;
-            }
-            else {
+            if (input >= 0 && input <= 8) {
                 choiceCheck = puzzDuplicate(input);
-                if (!choiceCheck) {
+                if (choiceCheck == false) {
                     cout << endl << "Error: Duplicate Input." << endl << endl;
                 }
                 else {
@@ -113,9 +115,12 @@ void createPuzzle() {
                     done = true;
                 }
             }
+            else {
+                cout << endl << "Error: Invalid Input." << endl << endl;
+            }
         }
     }
-    cout << endl;
+    cout << endl << "Your 8-Puzzle is:" << endl;
     printPuzzle(puzzle);
 }
 
@@ -137,10 +142,9 @@ bool puzzDuplicate(int input) {
 }
 
 // prints puzzle
-void printPuzzle(vector<int>) {
-    cout << "Your 8-Puzzle is:" << endl;
+void printPuzzle(vector<int> currPuzzle) {
     for (int i = 0; i <= 8; i++) {
-        cout << puzzle.at(i);
+        cout << currPuzzle.at(i);
         if (i == 2 || i == 5) {
             cout << endl;
         }
@@ -148,13 +152,98 @@ void printPuzzle(vector<int>) {
             cout << "  ";
         }
     }
-    cout << endl << endl;
+    cout << endl;
 }
 
 /* ----------------------------------------------------------------------------------------- */
 
-void solvePuzzle(vector<int>, int) {
+class Node {
+    public:
+        vector<int> board;
+        int heuristic;
+        int cost;
+        struct Node* left;
+        struct Node* right;
 
+        Node (vector<int> puzzle) {
+            board = puzzle;
+            heuristic = 0;
+            cost = 0;
+            left = NULL;
+            right = NULL;
+        }
+
+        int uniformCost() {
+            return 0;
+        }
+
+        int misplacedTile(vector<int> puzzle) { // calculate heuristic
+            int misplaced = 0;
+            for (int i = 0; i < 9; i++) {
+                if(puzzle.at(i) != goal.at(i)) {
+                    misplaced++;
+                }
+            }
+            if (puzzle.at(8) != 0) {
+                misplaced -= 1;
+            }
+            // cout << "Misplaced: " << misplaced << endl;
+            return misplaced;
+        }
+
+        int manhattanDistance(vector<int> puzzle) { // calculate heuristic
+            int distance = 0;
+            for (int i = 0; i < 9; i++) {
+                if (puzzle.at(i) != 0 && puzzle.at(i) != goal.at(i)) {
+                    distance += abs((puzzle.at(i) - 1) % 3 - i % 3) + abs((puzzle.at(i) - 1) / 3 - i / 3); // calculate spot coordinates
+                }
+            }
+            // cout << "Distance: " << distance << endl;
+            return distance;
+        }
+};
+
+/* ----------------------------------------------------------------------------------------- */
+
+void printTraceback(Node *current) {
+    cout << "The best state to expand with a g(n) = " << current->cost
+         << " and h(n) = " << current->heuristic << " is..." << endl;
+    printPuzzle(current->board);
+}
+
+void solvePuzzle(vector<int> puzzle, int algChoice) {
+    Node* root = new Node(puzzle);
+    if (algChoice == 1) {
+        root->uniformCost();
+    }
+    else if (algChoice == 2) {
+        root->misplacedTile(puzzle);
+    }
+    else if (algChoice == 3) {
+        root->manhattanDistance(puzzle);
+    }
+
+    queue<Node*> puzzQ;
+    bool finish = false;
+    puzzQ.push(root);
+    while (finish == false) {
+        if (puzzQ.empty()) {
+            cout << "Failure: Queue is empty." << endl;
+            finish = true;
+        }
+        else if (puzzQ.front()->board == goal) {
+            printTraceback(puzzQ.front());
+            puzzQ.pop();
+            cout << endl << "Goal state!" << endl << endl
+                 << "Solution depth was: " << endl
+                 << "Number of nodes expanded: " << endl 
+                 << "Max queue size: " << endl;
+            finish = true;
+        }
+        else {
+
+        }
+    }
 }
 
 /* ----------------------------------------------------------------------------------------- */
@@ -190,19 +279,19 @@ int main() {
 
     // user chooses algorithm choice to run 8-Puzzle
     while (!algOption) {
-        cout << "Enter your choice of algorithm" << endl
+        cout << endl << "Enter your choice of algorithm" << endl
              << "1 - Uniform Cost Search" << endl
              << "2 - A* with the Misplaced Tile heuristic" << endl
-             << "3 - A* with the Euclidean Distance heuristic" << endl;
+             << "3 - A* with the Manhattan Distance heuristic" << endl;
         cin >> algChoice;
 
-        if (!(algChoice == 1 || algChoice == 2 || algChoice == 3)) {
-            cout << endl << "Error: Invalid algorithm option." << endl << endl;
-            algOption = false;
-        }
-        else {             
+        if (algChoice == 1 || algChoice == 2 || algChoice == 3) {
             algOption = true;
             solvePuzzle(puzzle, algChoice);
+        }
+        else {
+            cout << endl << "Error: Invalid algorithm option." << endl << endl;
+            algOption = false;
         }
     }
 
