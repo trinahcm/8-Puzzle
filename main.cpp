@@ -3,8 +3,13 @@
 #include <cstdlib>
 #include <vector>
 #include <queue>
+#include <iterator>
+#include <ctime>
+#include <chrono>
+#include <cmath>
 
 using namespace std;
+using namespace std::chrono;
 
 // variable & function declarations
 vector<int> puzzle(9);
@@ -160,88 +165,281 @@ void printPuzzle(vector<int> currPuzzle) {
 class Node {
     public:
         vector<int> board;
+        int algorithm;
         int heuristic;
         int cost;
+        struct Node* up;
+        struct Node* down;
         struct Node* left;
         struct Node* right;
 
-        Node (vector<int> puzzle) {
+        Node(vector<int> puzzle, int algChoice) {
             board = puzzle;
-            heuristic = 0;
+            algorithm = algChoice;
+            heuristic = determineH(puzzle, algChoice);
             cost = 0;
-            left = NULL;
-            right = NULL;
+            up = down = left = right = NULL;
         }
 
-        int uniformCost() {
-            return 0;
+        // uniform cost search h(n) = 0
+        int uniformCost() { 
+            return 0; 
         }
 
-        int misplacedTile(vector<int> puzzle) { // calculate heuristic
+        // h(n) = # of misplaced tiles
+        int misplacedTile(vector<int> puzzle) {
             int misplaced = 0;
             for (int i = 0; i < 9; i++) {
                 if(puzzle.at(i) != goal.at(i)) {
                     misplaced++;
                 }
             }
+
             if (puzzle.at(8) != 0) {
                 misplaced -= 1;
             }
-            // cout << "Misplaced: " << misplaced << endl;
             return misplaced;
         }
 
-        int manhattanDistance(vector<int> puzzle) { // calculate heuristic
+        // h(n) = sum of misplaced tile distances
+        int manhattanDistance(vector<int> puzzle) {
             int distance = 0;
             for (int i = 0; i < 9; i++) {
                 if (puzzle.at(i) != 0 && puzzle.at(i) != goal.at(i)) {
-                    distance += abs((puzzle.at(i) - 1) % 3 - i % 3) + abs((puzzle.at(i) - 1) / 3 - i / 3); // calculate spot coordinates
+                    //             x = goal state - current state      y = goal state - current state
+                    distance += abs((puzzle.at(i) - 1) / 3 - i / 3) + abs((puzzle.at(i) - 1) % 3 - i % 3); // calculate spot coordinates
                 }
             }
-            // cout << "Distance: " << distance << endl;
             return distance;
+        }
+
+        int determineH(vector<int> puzzle, int algChoice) {
+            if (algChoice == 1) {
+                algChoice = uniformCost();
+            }
+            else if (algChoice == 2) {
+                algChoice = misplacedTile(puzzle);
+            }
+            else if (algChoice == 3) {
+                algChoice = manhattanDistance(puzzle);
+            }
+            return algChoice;
         }
 };
 
 /* ----------------------------------------------------------------------------------------- */
 
-void printTraceback(Node *current) {
+queue<Node*> puzzQ;
+vector<vector<int> > duplicate;
+int maxQueue = 0, nodesExp = 0;
+
+void printTraceback(Node* current) {
     cout << "The best state to expand with a g(n) = " << current->cost
          << " and h(n) = " << current->heuristic << " is..." << endl;
     printPuzzle(current->board);
 }
 
-void solvePuzzle(vector<int> puzzle, int algChoice) {
-    Node* root = new Node(puzzle);
-    if (algChoice == 1) {
-        root->uniformCost();
+// update max # of nodes in the queue at a time
+void checkMax() {
+    if (puzzQ.size() > maxQueue) {
+        maxQueue = puzzQ.size();
     }
-    else if (algChoice == 2) {
-        root->misplacedTile(puzzle);
-    }
-    else if (algChoice == 3) {
-        root->manhattanDistance(puzzle);
-    }
+}
 
-    queue<Node*> puzzQ;
+bool checkDupBoard(vector<int> curr) {
+    bool ifDuplicate = false;
+
+    for (int i = 0; i < duplicate.size(); i++) {
+        if (duplicate.at(i) == curr) {
+            ifDuplicate = true;
+            break;
+        }
+    }
+    return ifDuplicate;
+}
+
+// create boards for tile moving up, down, left, or right
+vector<int> createUp(vector<int> board, int index) {
+    vector<int> newBoard = board;
+    newBoard.at(index) = board.at(index - 3);
+    newBoard.at(index - 3) = 0;
+    return newBoard;
+}
+
+vector<int> createDown(vector<int> board, int index) {
+    vector<int> newBoard = board;
+    newBoard.at(index) = board.at(index + 3);
+    newBoard.at(index + 3) = 0;
+    return newBoard;
+}
+
+vector<int> createRight(vector<int> board, int index) {
+    vector<int> newBoard = board;
+    newBoard.at(index) = board.at(index + 1);
+    newBoard.at(index + 1) = 0;
+    return newBoard;
+}
+
+vector<int> createLeft(vector<int> board, int index) {
+    vector<int> newBoard = board;
+    newBoard.at(index) = board.at(index - 1);
+    newBoard.at(index - 1) = 0;
+    return newBoard;
+}
+
+// find node children (next possible move)
+void expandNode() {
+    int puzzSize = puzzQ.size();
+    for (int i = 0; i < puzzSize; i++) {
+        Node* current = puzzQ.front();
+        checkMax();
+
+        // find index of 0 
+        vector<int>::iterator it;
+        it = find(current->board.begin(), current->board.end(), 0);
+        int index = it - current->board.begin();
+
+        // can move up
+        if (index / 3 != 0) {
+            current->up = new Node(current->board, current->algorithm);
+            current->up->cost = current->cost + 1;
+            current->up->board = createUp(current->board, index);
+            current->up->heuristic = current->determineH(current->up->board, current->algorithm);
+            if (checkDupBoard(current->up->board) == false) {
+                duplicate.push_back(current->up->board);
+                puzzQ.push(current->up);
+                nodesExp++;
+            }
+        }
+
+        // can move down
+        if (index / 3 != 2) {
+            current->down = new Node(current->board, current->algorithm);
+            current->down->cost = current->cost + 1;
+            current->down->board = createDown(current->board, index);
+            current->down->heuristic = current->determineH(current->down->board, current->algorithm);
+            if (checkDupBoard(current->down->board) == false) {
+                duplicate.push_back(current->down->board);
+                puzzQ.push(current->down);
+                nodesExp++;
+            }
+        }
+
+        // can move right
+        if (index % 3 != 2) {
+            current->right = new Node(current->board, current->algorithm);
+            current->right->cost = current->cost + 1;
+            current->right->board = createRight(current->board, index);
+            current->right->heuristic = current->determineH(current->right->board, current->algorithm);
+            if (checkDupBoard(current->right->board) == false) {
+                duplicate.push_back(current->right->board);
+                puzzQ.push(current->right);
+                nodesExp++;
+            }
+        }
+        
+        // can move left
+        if (index % 3 != 0) {
+            current->left = new Node(current->board, current->algorithm);
+            current->left->cost = current->cost + 1;
+            current->left->board = createLeft(current->board, index);
+            current->left->heuristic = current->determineH(current->left->board, current->algorithm);
+            if (checkDupBoard(current->left->board) == false) {
+                duplicate.push_back(current->left->board);
+                puzzQ.push(current->left);
+                nodesExp++;
+            }
+        }
+
+        puzzQ.pop();
+        checkMax();
+    }
+}
+
+// main searching algorithm function
+// time of algorithm is in microseconds because when put in seconds it will just output 0 if less than 0
+void solvePuzzle(vector<int> puzzle, int algChoice) {
+    auto start = high_resolution_clock::now();
+    Node* root = new Node(puzzle, algChoice);
+
     bool finish = false;
     puzzQ.push(root);
+    duplicate.push_back(root->board);
+    checkMax();
+    nodesExp++;
+
     while (finish == false) {
         if (puzzQ.empty()) {
             cout << "Failure: Queue is empty." << endl;
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<microseconds>(stop - start);
+            cout << "Time in microseconds taken to find goal state: " << duration.count() << endl;
             finish = true;
+            break;
+
         }
-        else if (puzzQ.front()->board == goal) {
+        else if (puzzQ.front()->board == goal) { // if starting board is goal state
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<microseconds>(stop - start);
             printTraceback(puzzQ.front());
-            puzzQ.pop();
             cout << endl << "Goal state!" << endl << endl
-                 << "Solution depth was: " << endl
-                 << "Number of nodes expanded: " << endl 
-                 << "Max queue size: " << endl;
+                 << "Solution depth was: " << puzzQ.front()->cost << endl // cost + 1
+                 << "Number of nodes expanded: " << nodesExp << endl      // every time add to queue + 1
+                 << "Max queue size: " << maxQueue << endl                // queue.size()
+                 << "Time in microseconds taken to find goal state: " << duration.count() << endl;
+            puzzQ.pop();
             finish = true;
+            break;
         }
         else {
+            if (puzzQ.front()->algorithm == 1) {
+                printTraceback(puzzQ.front());
+                expandNode();
+                puzzQ.pop();
+            }
+            else {
+                queue<Node*> newQueue = puzzQ;
+                Node* bestNode = puzzQ.front();
+                int bestH = puzzQ.front()->heuristic;
+                puzzQ.pop();
+                while (puzzQ.size() > 0) {
+                    Node* temp = puzzQ.front();
+                    puzzQ.pop();
+                    if (temp->heuristic < bestNode->heuristic) { // figure out the best heuristic
+                        bestH = temp->heuristic;
+                        bestNode = temp;
+                    }
+                }
 
+                int size = newQueue.size();
+                if (newQueue.size() != 0) { // put nodes with the best heuristic inside the queue
+                    for (int j = 0; j < size; j++) {
+                        Node* tempNode = newQueue.front();
+                        newQueue.pop();
+                        if (tempNode->heuristic == bestH) {
+                                puzzQ.push(tempNode);
+                                printTraceback(tempNode);
+                        }
+                    }
+                }
+
+                if (bestNode->heuristic == 0) {
+                    auto stop = high_resolution_clock::now();
+                    auto duration = duration_cast<microseconds>(stop - start);
+                    printTraceback(bestNode);
+                    cout << endl << "Goal state!" << endl << endl
+                         << "Solution depth was: " << bestNode->cost << endl // cost + 1
+                         << "Number of nodes expanded: " << nodesExp << endl // every time add to queue + 1
+                         << "Max queue size: " << maxQueue << endl           // queue.size()
+                         << "Time in microseconds taken to find goal state: " << duration.count() << endl;
+                    finish = true;
+                    break;
+                }
+                else {
+                    expandNode(); // find node children (next moves)
+                    newQueue = puzzQ;
+                }
+            }
         }
     }
 }
@@ -282,8 +480,10 @@ int main() {
         cout << endl << "Enter your choice of algorithm" << endl
              << "1 - Uniform Cost Search" << endl
              << "2 - A* with the Misplaced Tile heuristic" << endl
-             << "3 - A* with the Manhattan Distance heuristic" << endl;
+             << "3 - A* with the Manhattan Distance heuristic" << endl
+             << endl << "Enter your algorithm choice: ";
         cin >> algChoice;
+        cout << endl;
 
         if (algChoice == 1 || algChoice == 2 || algChoice == 3) {
             algOption = true;
